@@ -142,7 +142,7 @@ export function decodeTMDBId(
   };
 }
 
-const baseURL = "https://api.themoviedb.org/3";
+const baseURL = "https://tmdb.xiaohan-kaka.gay/3";
 
 const headers = {
   accept: "application/json",
