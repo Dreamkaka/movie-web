@@ -53,6 +53,13 @@ export interface CaptionListItem {
   language: string;
   url: string;
   needsProxy: boolean;
+  hls?: boolean;
+}
+
+export interface AudioTrack {
+  id: string;
+  label: string;
+  language: string;
 }
 
 export interface SourceSlice {
@@ -60,7 +67,9 @@ export interface SourceSlice {
   source: SourceSliceSource | null;
   sourceId: string | null;
   qualities: SourceQuality[];
+  audioTracks: AudioTrack[];
   currentQuality: SourceQuality | null;
+  currentAudioTrack: AudioTrack | null;
   captionList: CaptionListItem[];
   caption: {
     selected: Caption | null;
@@ -108,8 +117,10 @@ export const createSourceSlice: MakeSlice<SourceSlice> = (set, get) => ({
   source: null,
   sourceId: null,
   qualities: [],
+  audioTracks: [],
   captionList: [],
   currentQuality: null,
+  currentAudioTrack: null,
   status: playerStatus.IDLE,
   meta: null,
   caption: {
@@ -118,6 +129,7 @@ export const createSourceSlice: MakeSlice<SourceSlice> = (set, get) => ({
   },
   setSourceId(id) {
     set((s) => {
+      s.status = playerStatus.PLAYING;
       s.sourceId = id;
     });
   },
@@ -155,6 +167,10 @@ export const createSourceSlice: MakeSlice<SourceSlice> = (set, get) => ({
       s.qualities = qualities as SourceQuality[];
       s.currentQuality = loadableStream.quality;
       s.captionList = captions;
+      s.interface.error = undefined;
+      s.status = playerStatus.PLAYING;
+      s.audioTracks = [];
+      s.currentAudioTrack = null;
     });
     const store = get();
     store.redisplaySource(startAt);
@@ -168,7 +184,10 @@ export const createSourceSlice: MakeSlice<SourceSlice> = (set, get) => ({
       automaticQuality: qualityPreferences.quality.automaticQuality,
       lastChosenQuality: quality,
     });
-
+    set((s) => {
+      s.interface.error = undefined;
+      s.status = playerStatus.PLAYING;
+    });
     store.display?.load({
       source: loadableStream.stream,
       startAt,
@@ -184,6 +203,8 @@ export const createSourceSlice: MakeSlice<SourceSlice> = (set, get) => ({
       if (!selectedQuality) return;
       set((s) => {
         s.currentQuality = quality;
+        s.status = playerStatus.PLAYING;
+        s.interface.error = undefined;
       });
       store.display?.load({
         source: selectedQuality,
